@@ -1,13 +1,14 @@
 ---
 title: "Lab 05 - La Quinta is Spanish for next to Denny's, Pt. 2"
-author: "Insert your name here"
-date: "Insert date here"
+author: "Benjamin Egan"
+date: "02-12-25"
 output: github_document
 ---
 
 ### Load packages and data
 
 ```{r load-packages, message = FALSE}
+library(ggrepel)
 library(tidyverse) 
 library(dsbox) 
 ```
@@ -18,27 +19,154 @@ states <- read_csv("data/states.csv")
 
 ### Exercise 1
 
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+```{r saving headache on backend, echo = FALSE}
+dennys <- dennys %>%
+  mutate(establishment = "Denny's")
+laquinta <- laquinta %>%
+  mutate(establishment = "La Quinta")
+
+```
+
+
+```{r Alaska locations}
+dn_ak <- dennys %>%
+  filter(state == "AK")
+nrow(dn_ak)
+
+lq_ak <- laquinta %>%
+  filter(state == "AK")
+nrow(lq_ak)
+
+
+```
+
+There are 3 Denny's and 2 La Quintas in Alaska.
 
 ### Exercise 2
 
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+```{r how many combinations}
+nrow(lq_ak) *nrow(dn_ak)
+```
+
+Since there are 3 Denny's and 2 La Quintas in Alaska, we need 6 total distances. We can combine the two data frames to aid in the calcuations.
+
+```{r setup full data frame, warning = FALSE}
+
+
+dn_lq_ak <- full_join(dn_ak, lq_ak, 
+                      by = "state")
+
+view(dn_lq_ak)
+
+
+```
+
+Once we combine the data frames, the dn_lq_ak data frame contains 6 rows, one row per combination. Each variable has an .x or .y designation to differentiate between if it is for a Denny's or a La Quinta. We can use mutate() to add a variable for distance.
+
 
 ### Exercise 3
 
-...
+```{r haversine calcuation, echo = FALSE}
+
+haversine <- function(long1, lat1, long2, lat2, round = 3) {
+  long1 <- long1 * pi / 180
+  lat1 <- lat1 * pi / 180
+  long2 <- long2 * pi / 180
+  lat2 <- lat2 * pi / 180
+
+  R <- 6371
+
+  a <- sin((lat2 - lat1) / 2)^2 + cos(lat1) * cos(lat2) * sin((long2 - long1) / 2)^2
+  d <- R * 2 * asin(sqrt(a))
+
+  return(round(d, round))
+}
+
+```
+
+```{r calcuate distance}
+
+dn_lq_ak <- 
+  dn_lq_ak %>%
+  mutate(
+    distance = haversine(longitude.x, latitude.x, longitude.y, latitude.y, 2)
+  )
+
+view(dn_lq_ak)
+
+```
+
+
 
 ### Exercise 4
 
+```{r minimum distance}
+
+dn_lq_ak_mindist <- dn_lq_ak %>%
+  group_by(address.x) %>%
+  summarize(closest = min(distance))
+
+dn_lq_ak_mindist <- dn_lq_ak_mindist %>%
+  rename(address = address.x)
+
+view(dn_lq_ak_mindist)
+```
+
+```{r creating dataset for Alaska visualization, echo = FALSE}
+
+all_together <- rbind(dn_ak,lq_ak)
+
+
+AK_dataset <- full_join(all_together, dn_lq_ak_mindist,
+          by = "address")
+```
+
+```{r visualization for Alaska}     
+
+AK_dataset %>%
+  ggplot( mapping = aes(
+    x = longitude,
+    y = latitude,
+    color = establishment
+  )) +
+  theme_bw()+
+    geom_point() +
+ scale_color_manual(values=c('Blue','Red'))+
+geom_text_repel(aes(x = longitude, 
+              y = latitude, 
+              label = closest),
+          size = 3, color = "black") +
+  labs(
+    title = "Minimum distance from a Denny's to a La Quinta in Alaska",
+    x = "",
+    y = "Distance"
+  )
+```
+
+This map is a geographical representation of the distance between Denny's and La Quinta. You can tell
 ...
 
 ### Exercise 5
+
+```{r visualization for Alaska}     
+
+AK_dataset %>%
+  ggplot( mapping = aes(
+    x = longitude,
+    y = latitude,
+    color = establishment
+  )) +
+  facetwrap(~closest)
+  theme_bw()+
+    geom_point() +
+  labs(
+    title = "Minimum distance from a Denny's to a La Quinta in Alaska",
+    x = "",
+    y = "Distance"
+  )
+```
+
+
 
 ...
 
