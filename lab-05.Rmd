@@ -55,10 +55,7 @@ Since there are 3 Denny's and 2 La Quintas in Alaska, we need 6 total distances.
 
 dn_lq_ak <- full_join(dn_ak, lq_ak, 
                       by = "state")
-
 view(dn_lq_ak)
-
-
 ```
 
 Once we combine the data frames, the dn_lq_ak data frame contains 6 rows, one row per combination. Each variable has an .x or .y designation to differentiate between if it is for a Denny's or a La Quinta. We can use mutate() to add a variable for distance.
@@ -112,16 +109,175 @@ dn_lq_ak_mindist <- dn_lq_ak_mindist %>%
 view(dn_lq_ak_mindist)
 ```
 
+```{r setup for other states, warning = FALSE, echo = FALSE}
+
+# North Carolina
+dn_nc <- dennys %>%
+  filter(state == "NC")
+
+lq_nc <- laquinta %>%
+  filter(state == "NC")
+
+dn_lq_nc <- full_join(dn_nc, lq_nc, 
+                      by = "state")
+dn_lq_nc <- 
+  dn_lq_nc %>%
+  mutate(
+    distance = haversine(longitude.x, latitude.x, longitude.y, latitude.y, 2)
+  )
+
+dn_lq_nc_mindist <- dn_lq_nc %>%
+  group_by(address.x) %>%
+  summarize(closest = min(distance))
+
+dn_lq_nc_mindist <- dn_lq_nc_mindist %>%
+  rename(address = address.x)
+
+
+# Texas
+dn_tx <- dennys %>%
+  filter(state == "TX")
+
+lq_tx <- laquinta %>%
+  filter(state == "TX")
+
+dn_lq_tx <- full_join(dn_tx, lq_tx, 
+                      by = "state")
+dn_lq_tx <- 
+  dn_lq_tx %>%
+  mutate(
+    distance = haversine(longitude.x, latitude.x, longitude.y, latitude.y, 2)
+  )
+
+dn_lq_tx_mindist <- dn_lq_tx %>%
+  group_by(address.x) %>%
+  summarize(closest = min(distance))
+
+dn_lq_tx_mindist <- dn_lq_tx_mindist %>%
+  rename(address = address.x)
+
+dn_lq_tx_mindist <- dn_lq_tx_mindist %>%
+ mutate(
+    close = if_else(closest <= 5, "Less than 5", "More than 5")
+  )
+
+```
+
+
+
+## Graphing The Distance
+
+### Alaska
+ 
+```{r comparison for Alaska}     
+
+dn_lq_ak_mindist %>%
+  ggplot(mapping = aes(
+    x = fct_reorder(address, closest),
+   y = closest
+  )) +
+  theme_bw()+
+  
+    geom_col(fill = "#6a4e93") +
+  labs(
+    title = "Minimum distance from a Denny's to a La Quinta in Alaska",
+    x = "Address of a Denny's",
+    y = "Distance to a La Quinta"
+  )
+
+mean(dn_lq_ak_mindist$closest)
+
+
+```
+
+This graph shows us that the closest La Quinta to a Denny's is only about 2 somethings away (I don't really know what units we're supposed to use here). The farthest La Quinta is only about 6 somethings away. I also calculated the average distance of a Denny's to a La Quinta to be 4.41 somethings.
+
+
+### North Carolina
+
+```{r comparison for North Carolina}     
+title_nc <- "Minimum distance from a Denny's to a La Quinta in North Carolina"
+
+dn_lq_nc_mindist %>%
+  ggplot(mapping = aes(
+    x = fct_rev(fct_reorder(address, closest)),
+   y = closest
+  )) +
+  theme_bw()+
+  coord_flip()+
+  geom_text(aes(x = address, 
+              y = closest, 
+              label = closest),
+          size = 3.7, color = "black") +
+    geom_col(alpha = .4, fill = "#6a4e93") +
+  labs(
+    x = "Address of a Denny's",
+    y = "Distance to a La Quinta"
+  )+
+  ggtitle(title_nc)+
+  theme(plot.title = element_text(size=12.5))
+
+mean(dn_lq_nc_mindist$closest)
+
+```
+
+This graph shows us that the same trend does not hold in North Carolina. The average distance from a Denny's to a La Quinta is 65.44286 somethings, with only four locations under 10 somethings.
+
+
+### Texas
+
+```{r comparison for Texas}     
+title_tx <- "Minimum distance from a Denny's to a La Quinta in Texas"
+
+dn_lq_tx_mindist %>%
+  ggplot(mapping = aes(
+    x = fct_rev(fct_reorder(address, closest)),
+   y = closest
+  )) +
+  theme_bw()+
+ coord_flip()+
+  facet_wrap(~close)+
+  geom_text(aes(x = address, 
+              y = closest, 
+              label = closest),
+          size = 3.7, color = "black") +
+    geom_col(alpha = .4, fill = "#6a4e93") +
+  labs(
+    x = "Address of a Denny's",
+    y = "Distance to a La Quinta"
+  )+
+  ggtitle(title_tx)+
+  theme(plot.title = element_text(size=12.5))
+
+mean(dn_lq_tx_mindist$closest)
+
+```
+
+This is a terrible graph
+
+
+
+
+
+
+
+
+
+
+## Visual by geographic location
+
+I also decided to graph these relationships geographically, using longitude and latitude.
+
+### Alaska
 ```{r creating dataset for Alaska visualization, echo = FALSE}
 
 all_together <- rbind(dn_ak,lq_ak)
-
 
 AK_dataset <- full_join(all_together, dn_lq_ak_mindist,
           by = "address")
 ```
 
-```{r visualization for Alaska}     
+```{r geographic for Alaska}     
 
 AK_dataset %>%
   ggplot( mapping = aes(
@@ -138,33 +294,86 @@ geom_text_repel(aes(x = longitude,
           size = 3, color = "black") +
   labs(
     title = "Minimum distance from a Denny's to a La Quinta in Alaska",
-    x = "",
-    y = "Distance"
+    x = "longitude",
+    y = "latitude"
   )
 ```
 
-This map is a geographical representation of the distance between Denny's and La Quinta. You can tell
-...
+This map is a geographical representation of the distance between Denny's and La Quinta. You can tell that they are tightly clustered together, indicating Denny's are always close to La Quintas.
 
-### Exercise 5
 
-```{r visualization for Alaska}     
+### North Carolina
 
-AK_dataset %>%
+```{r creating dataset for NC visualization, echo = FALSE}
+
+all_together <- rbind(dn_nc,lq_nc)
+
+NC_dataset <- full_join(all_together, dn_lq_nc_mindist,
+          by = "address")
+```
+
+```{r geographic for North Carolina, warning = FALSE}     
+
+NC_dataset %>%
   ggplot( mapping = aes(
     x = longitude,
     y = latitude,
     color = establishment
   )) +
-  facetwrap(~closest)
   theme_bw()+
     geom_point() +
+ scale_color_manual(values=c('Blue','Red'))+
+geom_text_repel(aes(x = longitude, 
+              y = latitude, 
+              label = closest),
+          size = 3, color = "black") +
   labs(
-    title = "Minimum distance from a Denny's to a La Quinta in Alaska",
-    x = "",
-    y = "Distance"
+    title = "Minimum distance from a Denny's to a La Quinta in North Carolina",
+    x = "Longitude",
+    y = "Latitude"
   )
 ```
+
+This graph is more messy and less helpful than the Alaska map. The increase in locations make it harder to understand which La Quinta each Denny's is going to.
+
+
+### Texas
+
+```{r creating dataset for TX visualization, echo = FALSE}
+
+all_together <- rbind(dn_tx,lq_tx)
+
+TX_dataset <- full_join(all_together, dn_lq_tx_mindist,
+          by = "address")
+```
+
+```{r geographic for Texas, warning = FALSE}     
+
+TX_dataset %>%
+  ggplot( mapping = aes(
+    x = longitude,
+    y = latitude,
+    color = establishment
+  )) +
+  theme_bw()+
+    geom_point() +
+ scale_color_manual(values=c('Blue','Red'))+
+geom_text_repel(aes(x = longitude, 
+              y = latitude, 
+              label = closest),
+          size = 3, color = "black") +
+  labs(
+    title = "Minimum distance from a Denny's to a La Quinta in Texas",
+    x = "Longitude",
+    y = "Latitude"
+  )
+```
+
+
+
+### Exercise 5
+
+
 
 
 

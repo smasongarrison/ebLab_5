@@ -6,6 +6,12 @@ Benjamin Egan
 ### Load packages and data
 
 ``` r
+library(ggrepel)
+```
+
+    ## Warning: package 'ggrepel' was built under R version 4.3.3
+
+``` r
 library(tidyverse) 
 library(dsbox) 
 ```
@@ -48,22 +54,6 @@ distances. We can combine the two data frames to aid in the calcuations.
 ``` r
 dn_lq_ak <- full_join(dn_ak, lq_ak, 
                       by = "state")
-
-dn_lq_ak
-```
-
-    ## # A tibble: 6 × 11
-    ##   address.x     city.x state zip.x longitude.x latitude.x address.y city.y zip.y
-    ##   <chr>         <chr>  <chr> <chr>       <dbl>      <dbl> <chr>     <chr>  <chr>
-    ## 1 2900 Denali   Ancho… AK    99503       -150.       61.2 3501 Min… "\nAn… 99503
-    ## 2 2900 Denali   Ancho… AK    99503       -150.       61.2 4920 Dal… "\nFa… 99709
-    ## 3 3850 Debarr … Ancho… AK    99508       -150.       61.2 3501 Min… "\nAn… 99503
-    ## 4 3850 Debarr … Ancho… AK    99508       -150.       61.2 4920 Dal… "\nFa… 99709
-    ## 5 1929 Airport… Fairb… AK    99701       -148.       64.8 3501 Min… "\nAn… 99503
-    ## 6 1929 Airport… Fairb… AK    99701       -148.       64.8 4920 Dal… "\nFa… 99709
-    ## # ℹ 2 more variables: longitude.y <dbl>, latitude.y <dbl>
-
-``` r
 view(dn_lq_ak)
 ```
 
@@ -74,9 +64,160 @@ use mutate() to add a variable for distance.
 
 ### Exercise 3
 
-\`\`\` \### Exercise 4
+``` r
+dn_lq_ak <- 
+  dn_lq_ak %>%
+  mutate(
+    distance = haversine(longitude.x, latitude.x, longitude.y, latitude.y, 2)
+  )
+
+view(dn_lq_ak)
+```
+
+### Exercise 4
+
+``` r
+dn_lq_ak_mindist <- dn_lq_ak %>%
+  group_by(address.x) %>%
+  summarize(closest = min(distance))
+
+dn_lq_ak_mindist <- dn_lq_ak_mindist %>%
+  rename(address = address.x)
+
+view(dn_lq_ak_mindist)
+```
+
+    ## Warning in full_join(dn_nc, lq_nc, by = "state"): Detected an unexpected many-to-many relationship between `x` and `y`.
+    ## ℹ Row 1 of `x` matches multiple rows in `y`.
+    ## ℹ Row 1 of `y` matches multiple rows in `x`.
+    ## ℹ If a many-to-many relationship is expected, set `relationship =
+    ##   "many-to-many"` to silence this warning.
+
+## Graphing The Distance
+
+### Alaska
+
+``` r
+dn_lq_ak_mindist %>%
+  ggplot(mapping = aes(
+    x = fct_reorder(address, closest),
+   y = closest
+  )) +
+  theme_bw()+
+  
+    geom_col(fill = "#6a4e93") +
+  labs(
+    title = "Minimum distance from a Denny's to a La Quinta in Alaska",
+    x = "Address of a Denny's",
+    y = "Distance to a La Qinta"
+  )
+```
+
+![](lab-05_files/figure-gfm/comparison%20for%20Alaska-1.png)<!-- -->
+
+``` r
+mean(dn_lq_ak_mindist$closest)
+```
+
+    ## [1] 4.41
+
+This graph shows us that the closest La Qinta to a Denny’s is only about
+2 somethings away (I don’t really know what units we’re supposed to use
+here). The farthest La Qinta is only about 6 somethings away.
+
+### North Carolina
+
+``` r
+title_nc <- "Minimum distance from a Denny's to a La Quinta in North Carolina"
+
+dn_lq_nc_mindist %>%
+  ggplot(mapping = aes(
+    x = fct_rev(fct_reorder(address, closest)),
+   y = closest
+  )) +
+  theme_bw()+
+  coord_flip()+
+  geom_text(aes(x = address, 
+              y = closest, 
+              label = closest),
+          size = 3.7, color = "black") +
+    geom_col(alpha = .4, fill = "#6a4e93") +
+  labs(
+    x = "Address of a Denny's",
+    y = "Distance to a La Qinta"
+  )+
+  ggtitle(title_nc)+
+  theme(plot.title = element_text(size=12.5))
+```
+
+![](lab-05_files/figure-gfm/comparison%20for%20North%20Carolina-1.png)<!-- -->
+
+This graph shows us that the same trend does not hold
 
 …
+
+## Visual by geographic location
+
+### Alaska
+
+``` r
+AK_dataset %>%
+  ggplot( mapping = aes(
+    x = longitude,
+    y = latitude,
+    color = establishment
+  )) +
+  theme_bw()+
+    geom_point() +
+ scale_color_manual(values=c('Blue','Red'))+
+geom_text_repel(aes(x = longitude, 
+              y = latitude, 
+              label = closest),
+          size = 3, color = "black") +
+  labs(
+    title = "Minimum distance from a Denny's to a La Quinta in Alaska",
+    x = "longitude",
+    y = "latitude"
+  )
+```
+
+    ## Warning: Removed 2 rows containing missing values or values outside the scale range
+    ## (`geom_text_repel()`).
+
+![](lab-05_files/figure-gfm/geographic%20for%20Alaska-1.png)<!-- -->
+
+This map is a geographical representation of the distance between
+Denny’s and La Quinta. You can tell that they are tightly clustered
+together, indicating Denny’s are always close to La Qintas.
+
+### North Carolina
+
+``` r
+NC_dataset %>%
+  ggplot( mapping = aes(
+    x = longitude,
+    y = latitude,
+    color = establishment
+  )) +
+  theme_bw()+
+    geom_point() +
+ scale_color_manual(values=c('Blue','Red'))+
+geom_text_repel(aes(x = longitude, 
+              y = latitude, 
+              label = closest),
+          size = 3, color = "black") +
+  labs(
+    title = "Minimum distance from a Denny's to a La Quinta in North Carolina",
+    x = "Longitude",
+    y = "Latitude"
+  )
+```
+
+![](lab-05_files/figure-gfm/geographic%20for%20North%20Carolina-1.png)<!-- -->
+
+This graph is more messy and less helpful than the Alaska map. The
+increase in locations make it harder to understand which La Qinta each
+Denny’s is going to.
 
 ### Exercise 5
 
