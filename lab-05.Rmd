@@ -5,15 +5,15 @@ date: "02-12-25"
 output: github_document
 ---
 
-### Load packages and data
 
-```{r load-packages, message = FALSE}
+
+```{r load-packages, message = FALSE, warning = FALSE, echo = FALSE}
 library(ggrepel)
 library(tidyverse) 
 library(dsbox) 
 ```
 
-```{r load-data, message = FALSE}
+```{r load-data, message = FALSE, echo = FALSE}
 states <- read_csv("data/states.csv")
 ```
 
@@ -203,7 +203,7 @@ dn_lq_ak_mindist %>%
   labs(
     title = "Minimum distance from a Denny's to a La Quinta in Alaska",
     x = "Address of a Denny's",
-    y = "Distance to a La Quinta"
+    y = "Distance to a La Quinta in km"
   )
 
 mean(dn_lq_ak_mindist$closest)
@@ -233,7 +233,7 @@ dn_lq_nc_mindist %>%
     geom_col(alpha = .4, fill = "#6a4e93") +
   labs(
     x = "Address of a Denny's",
-    y = "Distance to a La Quinta"
+    y = "Distance to a La Quinta in km"
   )+
   ggtitle(title_nc)+
   theme(plot.title = element_text(size=12.5))
@@ -257,8 +257,8 @@ dn_lq_tx_mindist %>%
   theme_bw()+
     geom_histogram(binwidth = 1,fill = "#6a4e93") +
   labs(
-    x = NULL,
-    y = "Distance to a La Quinta"
+    x = "Distance to a La Quinta in km",
+    y = NULL
   )+
   ggtitle(title_tx)+
   theme(plot.title = element_text(size=14))
@@ -294,7 +294,7 @@ dn_lq_ga_mindist %>%
     geom_col(alpha = .4, fill = "#6a4e93") +
   labs(
     x = "Address of a Denny's",
-    y = "Distance to a La Quinta"
+    y = "Distance to a La Quinta in km"
   )+
   ggtitle(title_ga)+
   theme(plot.title = element_text(size=12.5))
