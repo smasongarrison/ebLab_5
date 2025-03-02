@@ -164,13 +164,13 @@ dn_lq_tx_mindist %>%
 mean(dn_lq_tx_mindist$closest)
 ```
 
-    ## [1] 5.79215
+    ## [1] 11.34865
 
 ``` r
 sd(dn_lq_tx_mindist$closest)
 ```
 
-    ## [1] 8.830473
+    ## [1] 20.52603
 
 ``` r
 dn_lq_tx_mindist%>%
@@ -180,8 +180,8 @@ count(close)
     ## # A tibble: 2 × 2
     ##   close           n
     ##   <chr>       <int>
-    ## 1 Less than 5   126
-    ## 2 More than 5    74
+    ## 1 Less than 5   242
+    ## 2 More than 5   194
 
 The average distance from a Denny’s to a La Quinta is around 5.7 km,
 with the standard deviation being 8.83 km. By creating a variable that
@@ -309,6 +309,14 @@ can see that the bottom right corner of the state has several Denny’s
 without a La Quinta.
 
 ### Texas
+
+``` r
+anti_join(all_together, dn_lq_tx_mindist, by = "address") %>%
+  select(address)
+```
+
+    ## # A tibble: 0 × 1
+    ## # ℹ 1 variable: address <chr>
 
 ``` r
 TX_dataset %>%

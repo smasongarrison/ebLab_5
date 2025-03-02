@@ -119,9 +119,7 @@ lq_nc <- laquinta %>%
   filter(state == "NC")
 
 dn_lq_nc <- full_join(dn_nc, lq_nc, 
-                      by = "state")
-dn_lq_nc <- 
-  dn_lq_nc %>%
+                      by = "state") %>%
   mutate(
     distance = haversine(longitude.x, latitude.x, longitude.y, latitude.y, 2)
   )
@@ -142,24 +140,30 @@ lq_tx <- laquinta %>%
   filter(state == "TX")
 
 dn_lq_tx <- full_join(dn_tx, lq_tx, 
-                      by = "state")
-dn_lq_tx <- 
-  dn_lq_tx %>%
+                      by = "state") %>%
   mutate(
     distance = haversine(longitude.x, latitude.x, longitude.y, latitude.y, 2)
   )
 
-dn_lq_tx_mindist <- dn_lq_tx %>%
+dn_lq_tx_mindist_x <- dn_lq_tx %>%
   group_by(address.x) %>%
-  summarize(closest = min(distance))
-
-dn_lq_tx_mindist <- dn_lq_tx_mindist %>%
-  rename(address = address.x)
-
-dn_lq_tx_mindist <- dn_lq_tx_mindist %>%
+  summarize(closest = min(distance)) %>%
+  rename(address = address.x)  %>%
  mutate(
     close = if_else(closest <= 5, "Less than 5", "More than 5")
   )
+# added the missing resteraunts
+
+dn_lq_tx_mindist_y <- dn_lq_tx %>%
+  group_by(address.y) %>%
+  summarize(closest = min(distance)) %>%
+  rename(address = address.y)  %>%
+ mutate(
+    close = if_else(closest <= 5, "Less than 5", "More than 5")
+  )
+
+dn_lq_tx_mindist <- full_join(dn_lq_tx_mindist_x, dn_lq_tx_mindist_y, by = c("address","close","closest"))
+
 
 # Georgia
 dn_ga <- dennys %>%
@@ -393,7 +397,17 @@ all_together <- rbind(dn_tx,lq_tx)
 
 TX_dataset <- full_join(all_together, dn_lq_tx_mindist,
           by = "address")
+
 ```
+
+
+
+```{r}
+anti_join(all_together, dn_lq_tx_mindist, by = "address") %>%
+  select(address)
+
+```
+
 
 ```{r geographic for Texas, warning = FALSE}     
 
