@@ -423,7 +423,8 @@ TX_dataset %>%
 geom_text_repel(aes(x = longitude, 
               y = latitude, 
               label = closest),
-          size = 3, color = "black") +
+          size = 3, color = "black",
+          max.overlaps=500) +
   labs(
     title = "Minimum distance from a Denny's to a La Quinta in Texas",
     x = "Longitude",
